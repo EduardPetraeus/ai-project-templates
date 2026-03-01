@@ -1,0 +1,17 @@
+stack: python-data
+description: "Python data engineering project (medallion architecture)"
+directories:
+  - src/bronze
+  - src/silver
+  - src/gold
+  - tests
+  - docs/adr
+  - backlog
+  - .claude/commands
+  - .engineering
+extra_files:
+  - requirements.txt
+conventions:
+  naming: snake_case
+  sql_prefix: true
+  medallion: true
