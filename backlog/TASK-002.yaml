@@ -1,0 +1,34 @@
+id: TASK-002
+title: "Add GitHub Actions CI template to scaffolder"
+description: |
+  Add a .github/workflows/ci.yml.tmpl template that the scaffolder
+  generates. Should include: ruff lint, ruff format check, pytest,
+  and the governance gate from ai-governance-framework. Make it
+  conditional on stack type (Python stacks get pytest, docs-only
+  gets markdown lint).
+
+status: backlog
+priority: low
+agent: code
+review: agent-review
+assignee: null
+sprint: null
+
+depends_on: []
+blocks: []
+
+definition_of_done:
+  - "CI template exists and is included in scaffold output"
+  - "Template adapts to stack type"
+  - "Tests verify CI file is generated correctly"
+
+tags: [scaffolder, ci-cd, github-actions]
+estimate: m
+
+actual_tokens: null
+actual_duration_minutes: null
+completed: null
+
+created: 2026-03-01
+updated: 2026-03-01
+notes: ""

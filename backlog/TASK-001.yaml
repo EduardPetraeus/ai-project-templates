@@ -1,0 +1,34 @@
+id: TASK-001
+title: "Add databricks-lakehouse stack config"
+description: |
+  Create a new stack config (stacks/databricks-lakehouse.yaml) for
+  Databricks projects. Should scaffold: notebook structure, DLT pipeline
+  skeleton, Unity Catalog setup script, bronze/silver/gold directory
+  structure, and appropriate CLAUDE.md with Databricks conventions.
+  Extend scaffold.py to handle the new stack.
+
+status: ready
+priority: medium
+agent: code
+review: agent-review
+assignee: null
+sprint: null
+
+depends_on: []
+blocks: []
+
+definition_of_done:
+  - "stacks/databricks-lakehouse.yaml exists with correct structure"
+  - "scaffold.py generates correct output with --stack databricks-lakehouse"
+  - "Tests added and passing for the new stack"
+
+tags: [scaffolder, databricks, template]
+estimate: m
+
+actual_tokens: null
+actual_duration_minutes: null
+completed: null
+
+created: 2026-03-01
+updated: 2026-03-01
+notes: ""
