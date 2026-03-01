@@ -1,0 +1,23 @@
+stack: databricks-lakehouse
+description: "Databricks lakehouse project with medallion architecture and DLT"
+directories:
+  - notebooks/bronze
+  - notebooks/silver
+  - notebooks/gold
+  - notebooks/dlt
+  - src/utils
+  - src/schemas
+  - tests
+  - docs/adr
+  - backlog
+  - .claude/commands
+  - .engineering
+extra_files:
+  - requirements.txt
+  - databricks.yml
+conventions:
+  naming: snake_case
+  sql_prefix: true
+  medallion: true
+  unity_catalog: true
+  dlt: true

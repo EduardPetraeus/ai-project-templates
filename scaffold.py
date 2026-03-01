@@ -33,7 +33,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = SCRIPT_DIR / "templates"
 CONFIGS_DIR = SCRIPT_DIR / "configs"
 
-VALID_STACKS = ["python-data", "python-web", "docs-only"]
+VALID_STACKS = ["python-data", "python-web", "docs-only", "databricks-lakehouse"]
 VALID_MODES = ["solo", "team"]
 
 
@@ -143,6 +143,23 @@ def create_project(name: str, stack: str, mode: str, output_dir: Path) -> Path:
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.touch()
         created_files.append(filename)
+
+    # ----- CI template selection based on stack -----
+    ci_template_map = {
+        "docs-only": "ci-docs.yml.tmpl",
+        "python-data": "ci-python.yml.tmpl",
+        "python-web": "ci-python.yml.tmpl",
+        "databricks-lakehouse": "ci-python.yml.tmpl",
+    }
+    ci_template_name = ci_template_map.get(stack)
+    if ci_template_name:
+        ci_template_path = TEMPLATES_DIR / ".github" / "workflows" / ci_template_name
+        ci_content = render_template(ci_template_path, context)
+        if ci_content:
+            ci_file_path = project_dir / ".github" / "workflows" / "ci.yml"
+            ci_file_path.parent.mkdir(parents=True, exist_ok=True)
+            ci_file_path.write_text(ci_content)
+            created_files.append(".github/workflows/ci.yml")
 
     # ----- Print summary -----
     print(f"\nProject '{name}' created at: {project_dir}")
