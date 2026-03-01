@@ -1,14 +1,14 @@
-# CLAUDE.md — {{project_name}}
+# CLAUDE.md — scaffold-python-data
 
 This file governs all AI agent sessions in this repository.
 
 ## project_context
 
-- **Repo:** {{project_name}}
-- **Purpose:** {{description}}
-- **Created:** {{date}}
-- **Stack:** {{stack}}
-- **Mode:** {{mode}}
+- **Repo:** scaffold-python-data
+- **Purpose:** Python data engineering project (medallion architecture)
+- **Created:** 2026-03-01
+- **Stack:** python-data
+- **Mode:** solo
 
 ## conventions
 

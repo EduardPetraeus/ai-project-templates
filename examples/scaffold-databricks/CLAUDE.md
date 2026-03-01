@@ -1,14 +1,14 @@
-# CLAUDE.md — {{project_name}}
+# CLAUDE.md — scaffold-databricks
 
 This file governs all AI agent sessions in this repository.
 
 ## project_context
 
-- **Repo:** {{project_name}}
-- **Purpose:** {{description}}
-- **Created:** {{date}}
-- **Stack:** {{stack}}
-- **Mode:** {{mode}}
+- **Repo:** scaffold-databricks
+- **Purpose:** Databricks lakehouse project with medallion architecture and DLT
+- **Created:** 2026-03-01
+- **Stack:** databricks-lakehouse
+- **Mode:** solo
 
 ## conventions
 

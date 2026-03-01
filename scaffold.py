@@ -41,13 +41,13 @@ VALID_MODES = ["solo", "team"]
 # Config loading
 # ---------------------------------------------------------------------------
 
+
 def load_config(stack: str) -> dict:
     """Load stack configuration from YAML file."""
     config_path = CONFIGS_DIR / f"{stack}.yaml"
     if not config_path.exists():
         raise FileNotFoundError(
-            f"Config not found: {config_path}\n"
-            f"Valid stacks: {', '.join(VALID_STACKS)}"
+            f"Config not found: {config_path}\nValid stacks: {', '.join(VALID_STACKS)}"
         )
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
@@ -56,6 +56,7 @@ def load_config(stack: str) -> dict:
 # ---------------------------------------------------------------------------
 # Template rendering
 # ---------------------------------------------------------------------------
+
 
 def render_template(template_path: Path, context: dict) -> str:
     """Render a .tmpl template by replacing {{key}} placeholders with values."""
@@ -72,14 +73,18 @@ def render_template(template_path: Path, context: dict) -> str:
 # Project creation
 # ---------------------------------------------------------------------------
 
-def create_project(name: str, stack: str, mode: str, output_dir: Path) -> Path:
+
+def create_project(
+    name: str, stack: str, mode: str, output_dir: Path, dry_run: bool = False
+) -> Path:
     """Create the full project structure.
 
     Args:
         name: Project name (used as directory name).
-        stack: Stack type (python-data, python-web, docs-only).
+        stack: Stack type (python-data, python-web, docs-only, databricks-lakehouse).
         mode: Working mode (solo, team).
         output_dir: Parent directory where project folder is created.
+        dry_run: If True, print what would be created without writing files.
 
     Returns:
         Path to the created project directory.
@@ -87,7 +92,7 @@ def create_project(name: str, stack: str, mode: str, output_dir: Path) -> Path:
     config = load_config(stack)
     project_dir = output_dir / name
 
-    if project_dir.exists():
+    if not dry_run and project_dir.exists():
         print(f"ERROR: Directory already exists: {project_dir}")
         print("Remove it first or choose a different name.")
         sys.exit(1)
@@ -101,16 +106,16 @@ def create_project(name: str, stack: str, mode: str, output_dir: Path) -> Path:
         "description": config.get("description", ""),
     }
 
-    # ----- Create directories from config -----
+    # ----- Collect directories -----
+    all_dirs = []
     directories = config.get("directories", [])
-    for dir_path in directories:
-        (project_dir / dir_path).mkdir(parents=True, exist_ok=True)
+    all_dirs.extend(directories)
+    core_dirs = ["docs/adr", "backlog", ".claude/commands", ".engineering"]
+    for d in core_dirs:
+        if d not in all_dirs:
+            all_dirs.append(d)
 
-    # Always ensure these core directories exist
-    for required_dir in ["docs/adr", "backlog", ".claude/commands", ".engineering"]:
-        (project_dir / required_dir).mkdir(parents=True, exist_ok=True)
-
-    # ----- Render and write template files -----
+    # ----- Collect template files -----
     template_mappings = {
         "CLAUDE.md.tmpl": "CLAUDE.md",
         "CONTEXT.md.tmpl": "CONTEXT.md",
@@ -127,21 +132,17 @@ def create_project(name: str, stack: str, mode: str, output_dir: Path) -> Path:
     }
 
     created_files = []
+    rendered_contents = {}
     for template_name, output_name in template_mappings.items():
         template_path = TEMPLATES_DIR / template_name
         content = render_template(template_path, context)
         if content:
-            file_path = project_dir / output_name
-            file_path.parent.mkdir(parents=True, exist_ok=True)
-            file_path.write_text(content)
             created_files.append(output_name)
+            rendered_contents[output_name] = content
 
-    # ----- Create extra files from config (e.g. requirements.txt) -----
+    # ----- Extra files from config (e.g. requirements.txt) -----
     extra_files = config.get("extra_files", [])
     for filename in extra_files:
-        file_path = project_dir / filename
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_path.touch()
         created_files.append(filename)
 
     # ----- CI template selection based on stack -----
@@ -152,29 +153,70 @@ def create_project(name: str, stack: str, mode: str, output_dir: Path) -> Path:
         "databricks-lakehouse": "ci-python.yml.tmpl",
     }
     ci_template_name = ci_template_map.get(stack)
+    ci_content = None
     if ci_template_name:
         ci_template_path = TEMPLATES_DIR / ".github" / "workflows" / ci_template_name
         ci_content = render_template(ci_template_path, context)
         if ci_content:
-            ci_file_path = project_dir / ".github" / "workflows" / "ci.yml"
-            ci_file_path.parent.mkdir(parents=True, exist_ok=True)
-            ci_file_path.write_text(ci_content)
             created_files.append(".github/workflows/ci.yml")
+            if ".github/workflows" not in all_dirs:
+                all_dirs.append(".github/workflows")
+
+    # ----- AGENTS.md symlink -----
+    created_files.append("AGENTS.md -> CLAUDE.md")
+
+    # ----- Dry run: print plan and return -----
+    if dry_run:
+        print(f"[DRY RUN] Project '{name}' would be created at: {project_dir}")
+        print(f"Stack: {stack} | Mode: {mode}")
+        print("\nDirectories:")
+        for d in sorted(all_dirs):
+            print(f"  {d}/")
+        print("\nFiles:")
+        for f in sorted(created_files):
+            print(f"  {f}")
+        return project_dir
+
+    # ----- Write: create directories -----
+    for dir_path in all_dirs:
+        (project_dir / dir_path).mkdir(parents=True, exist_ok=True)
+
+    # ----- Write: create template files -----
+    for output_name, content in rendered_contents.items():
+        file_path = project_dir / output_name
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content)
+
+    # ----- Write: create extra files -----
+    for filename in extra_files:
+        file_path = project_dir / filename
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.touch()
+
+    # ----- Write: CI file -----
+    if ci_content:
+        ci_file_path = project_dir / ".github" / "workflows" / "ci.yml"
+        ci_file_path.parent.mkdir(parents=True, exist_ok=True)
+        ci_file_path.write_text(ci_content)
+
+    # ----- Write: AGENTS.md symlink -----
+    agents_path = project_dir / "AGENTS.md"
+    agents_path.symlink_to("CLAUDE.md")
 
     # ----- Print summary -----
     print(f"\nProject '{name}' created at: {project_dir}")
     print(f"Stack: {stack}")
     print(f"Mode: {mode}")
     print(f"Date: {context['date']}")
-    print(f"\nDirectories created: {len(directories) + 4}")
+    print(f"\nDirectories created: {len(all_dirs)}")
     print(f"Files created: {len(created_files)}")
     print("\nFiles:")
     for f in sorted(created_files):
         print(f"  {f}")
-    print(f"\nNext steps:")
+    print("\nNext steps:")
     print(f"  cd {project_dir}")
-    print(f"  git init")
-    print(f"  git add -A && git commit -m 'Initial scaffold from ai-project-templates'")
+    print("  git init")
+    print("  git add -A && git commit -m 'Initial scaffold from ai-project-templates'")
 
     return project_dir
 
@@ -182,6 +224,7 @@ def create_project(name: str, stack: str, mode: str, output_dir: Path) -> Path:
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def parse_args(args: list = None) -> argparse.Namespace:
     """Parse command-line arguments."""
@@ -217,6 +260,11 @@ def parse_args(args: list = None) -> argparse.Namespace:
         default=".",
         help="Output directory (default: current directory)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be created without writing files",
+    )
     return parser.parse_args(args)
 
 
@@ -234,6 +282,7 @@ def main():
         stack=args.stack,
         mode=args.mode,
         output_dir=output_dir,
+        dry_run=args.dry_run,
     )
 
 

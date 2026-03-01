@@ -1,3 +1,4 @@
+deprecated: "Migrated to GitHub Issues (#2). This file is kept for reference only."
 id: TASK-001
 title: "Add databricks-lakehouse stack config"
 description: |

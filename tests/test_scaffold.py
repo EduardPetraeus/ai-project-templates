@@ -21,6 +21,7 @@ def tmp_output_dir(tmp_path):
 # Directory creation tests
 # ---------------------------------------------------------------------------
 
+
 class TestCreatesExpectedDirectories:
     """Verify that all expected directories are created for each stack."""
 
@@ -79,11 +80,14 @@ class TestCreatesExpectedDirectories:
 # Template substitution tests
 # ---------------------------------------------------------------------------
 
+
 class TestTemplatesHaveCorrectSubstitutions:
     """Verify that {{placeholders}} are replaced with actual values."""
 
     def test_claude_md_substitution(self, tmp_output_dir):
-        project_dir = create_project("my-project", "python-data", "solo", tmp_output_dir)
+        project_dir = create_project(
+            "my-project", "python-data", "solo", tmp_output_dir
+        )
         content = (project_dir / "CLAUDE.md").read_text()
         assert "my-project" in content
         assert "python-data" in content
@@ -100,19 +104,25 @@ class TestTemplatesHaveCorrectSubstitutions:
         assert "{{" not in content
 
     def test_task_yaml_substitution(self, tmp_output_dir):
-        project_dir = create_project("my-project", "python-data", "solo", tmp_output_dir)
+        project_dir = create_project(
+            "my-project", "python-data", "solo", tmp_output_dir
+        )
         content = (project_dir / "backlog" / "TASK-001.yaml").read_text()
         assert "my-project" in content
         assert "{{" not in content
 
     def test_pyproject_substitution(self, tmp_output_dir):
-        project_dir = create_project("my-project", "python-data", "solo", tmp_output_dir)
+        project_dir = create_project(
+            "my-project", "python-data", "solo", tmp_output_dir
+        )
         content = (project_dir / ".engineering" / "pyproject.toml").read_text()
         assert "my-project" in content
         assert "{{" not in content
 
     def test_readme_substitution(self, tmp_output_dir):
-        project_dir = create_project("my-project", "python-data", "solo", tmp_output_dir)
+        project_dir = create_project(
+            "my-project", "python-data", "solo", tmp_output_dir
+        )
         content = (project_dir / "README.md").read_text()
         assert "my-project" in content
         assert "{{" not in content
@@ -121,6 +131,7 @@ class TestTemplatesHaveCorrectSubstitutions:
 # ---------------------------------------------------------------------------
 # Error handling tests
 # ---------------------------------------------------------------------------
+
 
 class TestErrorHandling:
     """Verify that invalid inputs raise appropriate errors."""
@@ -135,7 +146,9 @@ class TestErrorHandling:
 
     def test_invalid_mode_rejected_by_argparse(self):
         with pytest.raises(SystemExit):
-            parse_args(["--name", "test", "--stack", "python-data", "--mode", "invalid"])
+            parse_args(
+                ["--name", "test", "--stack", "python-data", "--mode", "invalid"]
+            )
 
     def test_refuses_existing_directory(self, tmp_output_dir):
         (tmp_output_dir / "existing-project").mkdir()
@@ -146,6 +159,7 @@ class TestErrorHandling:
 # ---------------------------------------------------------------------------
 # Output directory tests
 # ---------------------------------------------------------------------------
+
 
 class TestOutputDir:
     """Verify output directory handling."""
@@ -161,22 +175,31 @@ class TestOutputDir:
         assert (project_dir / "CLAUDE.md").exists()
 
     def test_default_output_dir_is_current(self):
-        args = parse_args(["--name", "test", "--stack", "python-data", "--mode", "solo"])
+        args = parse_args(
+            ["--name", "test", "--stack", "python-data", "--mode", "solo"]
+        )
         assert args.output_dir == "."
 
     def test_custom_output_dir_parsed(self):
-        args = parse_args([
-            "--name", "test",
-            "--stack", "python-web",
-            "--mode", "team",
-            "--output-dir", "/tmp/custom",
-        ])
+        args = parse_args(
+            [
+                "--name",
+                "test",
+                "--stack",
+                "python-web",
+                "--mode",
+                "team",
+                "--output-dir",
+                "/tmp/custom",
+            ]
+        )
         assert args.output_dir == "/tmp/custom"
 
 
 # ---------------------------------------------------------------------------
 # Config loading tests
 # ---------------------------------------------------------------------------
+
 
 class TestLoadConfig:
     """Tests for config loading."""
@@ -202,11 +225,14 @@ class TestLoadConfig:
 # Databricks-lakehouse stack tests
 # ---------------------------------------------------------------------------
 
+
 class TestDatabricksLakehouseStack:
     """Tests for the databricks-lakehouse stack."""
 
     def test_databricks_directories(self, tmp_output_dir):
-        project_dir = create_project("test-db", "databricks-lakehouse", "solo", tmp_output_dir)
+        project_dir = create_project(
+            "test-db", "databricks-lakehouse", "solo", tmp_output_dir
+        )
         assert (project_dir / "notebooks" / "bronze").is_dir()
         assert (project_dir / "notebooks" / "silver").is_dir()
         assert (project_dir / "notebooks" / "gold").is_dir()
@@ -215,7 +241,9 @@ class TestDatabricksLakehouseStack:
         assert (project_dir / "src" / "schemas").is_dir()
 
     def test_databricks_extra_files(self, tmp_output_dir):
-        project_dir = create_project("test-db", "databricks-lakehouse", "solo", tmp_output_dir)
+        project_dir = create_project(
+            "test-db", "databricks-lakehouse", "solo", tmp_output_dir
+        )
         assert (project_dir / "requirements.txt").exists()
         assert (project_dir / "databricks.yml").exists()
 
@@ -226,13 +254,17 @@ class TestDatabricksLakehouseStack:
         assert config["conventions"]["dlt"] is True
 
     def test_databricks_core_files(self, tmp_output_dir):
-        project_dir = create_project("test-db2", "databricks-lakehouse", "solo", tmp_output_dir)
+        project_dir = create_project(
+            "test-db2", "databricks-lakehouse", "solo", tmp_output_dir
+        )
         assert (project_dir / "CLAUDE.md").exists()
         assert (project_dir / "backlog" / "TASK-001.yaml").exists()
         assert (project_dir / ".engineering" / "ruff.toml").exists()
 
     def test_databricks_template_substitution(self, tmp_output_dir):
-        project_dir = create_project("my-db-project", "databricks-lakehouse", "solo", tmp_output_dir)
+        project_dir = create_project(
+            "my-db-project", "databricks-lakehouse", "solo", tmp_output_dir
+        )
         content = (project_dir / "CLAUDE.md").read_text()
         assert "my-db-project" in content
         assert "databricks-lakehouse" in content
@@ -242,6 +274,7 @@ class TestDatabricksLakehouseStack:
 # ---------------------------------------------------------------------------
 # CI template selection tests
 # ---------------------------------------------------------------------------
+
 
 class TestCITemplateSelection:
     """Tests for CI template generation based on stack type."""
@@ -255,21 +288,102 @@ class TestCITemplateSelection:
         assert "ruff" in content
 
     def test_docs_only_gets_markdownlint_ci(self, tmp_output_dir):
-        project_dir = create_project("test-ci-docs", "docs-only", "solo", tmp_output_dir)
+        project_dir = create_project(
+            "test-ci-docs", "docs-only", "solo", tmp_output_dir
+        )
         ci_file = project_dir / ".github" / "workflows" / "ci.yml"
         assert ci_file.exists()
         content = ci_file.read_text()
         assert "markdownlint" in content.lower() or "markdown" in content.lower()
 
     def test_ci_template_no_unresolved_placeholders(self, tmp_output_dir):
-        project_dir = create_project("test-ci-clean", "python-web", "team", tmp_output_dir)
+        project_dir = create_project(
+            "test-ci-clean", "python-web", "team", tmp_output_dir
+        )
         ci_file = project_dir / ".github" / "workflows" / "ci.yml"
         content = ci_file.read_text()
         assert "{{" not in content
 
     def test_databricks_gets_python_ci(self, tmp_output_dir):
-        project_dir = create_project("test-ci-db", "databricks-lakehouse", "solo", tmp_output_dir)
+        project_dir = create_project(
+            "test-ci-db", "databricks-lakehouse", "solo", tmp_output_dir
+        )
         ci_file = project_dir / ".github" / "workflows" / "ci.yml"
         assert ci_file.exists()
         content = ci_file.read_text()
         assert "pytest" in content
+
+
+# ---------------------------------------------------------------------------
+# Dry-run tests
+# ---------------------------------------------------------------------------
+
+
+class TestDryRun:
+    """Tests for the --dry-run flag."""
+
+    def test_dry_run_creates_no_files(self, tmp_output_dir):
+        project_dir = create_project(
+            "dry-test", "python-data", "solo", tmp_output_dir, dry_run=True
+        )
+        assert not project_dir.exists()
+
+    def test_dry_run_returns_project_path(self, tmp_output_dir):
+        project_dir = create_project(
+            "dry-test2", "python-data", "solo", tmp_output_dir, dry_run=True
+        )
+        assert project_dir == tmp_output_dir / "dry-test2"
+
+    def test_dry_run_output_mentions_stack(self, tmp_output_dir, capsys):
+        create_project("dry-test3", "python-data", "solo", tmp_output_dir, dry_run=True)
+        captured = capsys.readouterr()
+        assert "python-data" in captured.out
+        assert "DRY RUN" in captured.out
+
+    def test_dry_run_lists_files(self, tmp_output_dir, capsys):
+        create_project("dry-test4", "docs-only", "solo", tmp_output_dir, dry_run=True)
+        captured = capsys.readouterr()
+        assert "CLAUDE.md" in captured.out
+        assert "AGENTS.md -> CLAUDE.md" in captured.out
+
+    def test_dry_run_arg_parsed(self):
+        args = parse_args(
+            ["--name", "test", "--stack", "python-data", "--mode", "solo", "--dry-run"]
+        )
+        assert args.dry_run is True
+
+    def test_no_dry_run_by_default(self):
+        args = parse_args(
+            ["--name", "test", "--stack", "python-data", "--mode", "solo"]
+        )
+        assert args.dry_run is False
+
+
+# ---------------------------------------------------------------------------
+# AGENTS.md symlink tests
+# ---------------------------------------------------------------------------
+
+
+class TestAgentsSymlink:
+    """Tests for AGENTS.md symlink creation."""
+
+    def test_agents_symlink_created(self, tmp_output_dir):
+        project_dir = create_project(
+            "test-agents", "python-data", "solo", tmp_output_dir
+        )
+        agents_path = project_dir / "AGENTS.md"
+        assert agents_path.is_symlink()
+        assert str(agents_path.readlink()) == "CLAUDE.md"
+
+    def test_agents_symlink_resolves_to_claude_content(self, tmp_output_dir):
+        project_dir = create_project(
+            "test-agents2", "python-data", "solo", tmp_output_dir
+        )
+        agents_content = (project_dir / "AGENTS.md").read_text()
+        claude_content = (project_dir / "CLAUDE.md").read_text()
+        assert agents_content == claude_content
+
+    def test_agents_symlink_all_stacks(self, tmp_output_dir):
+        for stack in VALID_STACKS:
+            project_dir = create_project(f"test-{stack}", stack, "solo", tmp_output_dir)
+            assert (project_dir / "AGENTS.md").is_symlink()

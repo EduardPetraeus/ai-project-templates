@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check scaffold.py tests/
+      - run: ruff format --check scaffold.py tests/
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml pytest
+      - run: python -m pytest tests/ -v
+
+  scaffold-all-stacks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml ruff
+      - name: Scaffold and validate all stacks
+        run: |
+          for stack in python-data python-web docs-only databricks-lakehouse; do
+            echo "=== Scaffolding $stack ==="
+            python scaffold.py --name "test-$stack" --stack "$stack" --mode solo --output-dir /tmp/scaffold-test
+            if grep -r '{{' "/tmp/scaffold-test/test-$stack/" --include='*.md' --include='*.yaml' --include='*.toml' --include='*.yml' 2>/dev/null; then
+              echo "ERROR: Found unresolved placeholders in $stack"
+              exit 1
+            fi
+            if [ -L "/tmp/scaffold-test/test-$stack/AGENTS.md" ]; then
+              echo "PASS: AGENTS.md symlink exists"
+            else
+              echo "FAIL: AGENTS.md symlink missing"
+              exit 1
+            fi
+          done
