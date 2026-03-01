@@ -33,7 +33,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = SCRIPT_DIR / "templates"
 CONFIGS_DIR = SCRIPT_DIR / "configs"
 
-VALID_STACKS = ["python-data", "python-web", "docs-only"]
+VALID_STACKS = ["python-data", "python-web", "docs-only", "databricks-lakehouse"]
 VALID_MODES = ["solo", "team"]
 
 

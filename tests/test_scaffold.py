@@ -196,3 +196,44 @@ class TestLoadConfig:
         config = load_config("docs-only")
         assert config["stack"] == "docs-only"
         assert config["extra_files"] == []
+
+
+# ---------------------------------------------------------------------------
+# Databricks-lakehouse stack tests
+# ---------------------------------------------------------------------------
+
+class TestDatabricksLakehouseStack:
+    """Tests for the databricks-lakehouse stack."""
+
+    def test_databricks_directories(self, tmp_output_dir):
+        project_dir = create_project("test-db", "databricks-lakehouse", "solo", tmp_output_dir)
+        assert (project_dir / "notebooks" / "bronze").is_dir()
+        assert (project_dir / "notebooks" / "silver").is_dir()
+        assert (project_dir / "notebooks" / "gold").is_dir()
+        assert (project_dir / "notebooks" / "dlt").is_dir()
+        assert (project_dir / "src" / "utils").is_dir()
+        assert (project_dir / "src" / "schemas").is_dir()
+
+    def test_databricks_extra_files(self, tmp_output_dir):
+        project_dir = create_project("test-db", "databricks-lakehouse", "solo", tmp_output_dir)
+        assert (project_dir / "requirements.txt").exists()
+        assert (project_dir / "databricks.yml").exists()
+
+    def test_databricks_config_loading(self):
+        config = load_config("databricks-lakehouse")
+        assert config["stack"] == "databricks-lakehouse"
+        assert config["conventions"]["unity_catalog"] is True
+        assert config["conventions"]["dlt"] is True
+
+    def test_databricks_core_files(self, tmp_output_dir):
+        project_dir = create_project("test-db2", "databricks-lakehouse", "solo", tmp_output_dir)
+        assert (project_dir / "CLAUDE.md").exists()
+        assert (project_dir / "backlog" / "TASK-001.yaml").exists()
+        assert (project_dir / ".engineering" / "ruff.toml").exists()
+
+    def test_databricks_template_substitution(self, tmp_output_dir):
+        project_dir = create_project("my-db-project", "databricks-lakehouse", "solo", tmp_output_dir)
+        content = (project_dir / "CLAUDE.md").read_text()
+        assert "my-db-project" in content
+        assert "databricks-lakehouse" in content
+        assert "{{" not in content
