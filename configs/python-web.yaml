@@ -1,0 +1,18 @@
+stack: python-web
+description: "Python web application (API + services)"
+directories:
+  - src/api
+  - src/models
+  - src/services
+  - static
+  - tests
+  - docs/adr
+  - backlog
+  - .claude/commands
+  - .engineering
+extra_files:
+  - requirements.txt
+conventions:
+  naming: snake_case
+  sql_prefix: false
+  medallion: false

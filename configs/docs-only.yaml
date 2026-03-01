@@ -1,0 +1,12 @@
+stack: docs-only
+description: "Documentation-only repository"
+directories:
+  - docs
+  - docs/adr
+  - backlog
+  - .claude/commands
+extra_files: []
+conventions:
+  naming: kebab-case
+  sql_prefix: false
+  medallion: false
