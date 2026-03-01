@@ -237,3 +237,39 @@ class TestDatabricksLakehouseStack:
         assert "my-db-project" in content
         assert "databricks-lakehouse" in content
         assert "{{" not in content
+
+
+# ---------------------------------------------------------------------------
+# CI template selection tests
+# ---------------------------------------------------------------------------
+
+class TestCITemplateSelection:
+    """Tests for CI template generation based on stack type."""
+
+    def test_python_data_gets_pytest_ci(self, tmp_output_dir):
+        project_dir = create_project("test-ci", "python-data", "solo", tmp_output_dir)
+        ci_file = project_dir / ".github" / "workflows" / "ci.yml"
+        assert ci_file.exists()
+        content = ci_file.read_text()
+        assert "pytest" in content
+        assert "ruff" in content
+
+    def test_docs_only_gets_markdownlint_ci(self, tmp_output_dir):
+        project_dir = create_project("test-ci-docs", "docs-only", "solo", tmp_output_dir)
+        ci_file = project_dir / ".github" / "workflows" / "ci.yml"
+        assert ci_file.exists()
+        content = ci_file.read_text()
+        assert "markdownlint" in content.lower() or "markdown" in content.lower()
+
+    def test_ci_template_no_unresolved_placeholders(self, tmp_output_dir):
+        project_dir = create_project("test-ci-clean", "python-web", "team", tmp_output_dir)
+        ci_file = project_dir / ".github" / "workflows" / "ci.yml"
+        content = ci_file.read_text()
+        assert "{{" not in content
+
+    def test_databricks_gets_python_ci(self, tmp_output_dir):
+        project_dir = create_project("test-ci-db", "databricks-lakehouse", "solo", tmp_output_dir)
+        ci_file = project_dir / ".github" / "workflows" / "ci.yml"
+        assert ci_file.exists()
+        content = ci_file.read_text()
+        assert "pytest" in content
