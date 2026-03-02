@@ -1,20 +1,193 @@
 """Tests for the project scaffolder."""
 
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 # Add parent directory to path so we can import scaffold
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scaffold import create_project, load_config, parse_args, VALID_STACKS
+from scaffold import (
+    VALID_STACKS,
+    create_project,
+    load_config,
+    parse_args,
+    render_template,
+    validate_project_name,
+)
 
 
 @pytest.fixture
 def tmp_output_dir(tmp_path):
     """Provide a temporary output directory."""
     return tmp_path
+
+
+# ---------------------------------------------------------------------------
+# Project name validation tests
+# ---------------------------------------------------------------------------
+
+
+class TestProjectNameValidation:
+    """Verify project name validation rules."""
+
+    def test_valid_simple_name(self):
+        """Simple lowercase name should pass."""
+        validate_project_name("my-project")
+
+    def test_valid_name_with_digits(self):
+        """Name with digits should pass."""
+        validate_project_name("api-v2")
+
+    def test_valid_name_starts_with_digit(self):
+        """Name starting with a digit should pass."""
+        validate_project_name("3d-viewer")
+
+    def test_valid_single_char(self):
+        """Single character name should pass."""
+        validate_project_name("x")
+
+    def test_valid_all_digits(self):
+        """All-digit name should pass."""
+        validate_project_name("123")
+
+    def test_invalid_spaces(self):
+        """Name with spaces should fail."""
+        with pytest.raises(ValueError, match="Invalid project name"):
+            validate_project_name("foo bar")
+
+    def test_invalid_uppercase(self):
+        """Name with uppercase letters should fail."""
+        with pytest.raises(ValueError, match="Invalid project name"):
+            validate_project_name("MyProject")
+
+    def test_invalid_underscores(self):
+        """Name with underscores should fail."""
+        with pytest.raises(ValueError, match="Invalid project name"):
+            validate_project_name("my_project")
+
+    def test_invalid_starts_with_hyphen(self):
+        """Name starting with a hyphen should fail."""
+        with pytest.raises(ValueError, match="Invalid project name"):
+            validate_project_name("-my-project")
+
+    def test_invalid_special_chars(self):
+        """Name with special characters should fail."""
+        with pytest.raises(ValueError, match="Invalid project name"):
+            validate_project_name("my@project!")
+
+    def test_invalid_empty_name(self):
+        """Empty name should fail with a clear message."""
+        with pytest.raises(ValueError, match="cannot be empty"):
+            validate_project_name("")
+
+    def test_error_message_includes_examples(self):
+        """Error message should include valid examples."""
+        with pytest.raises(ValueError, match="my-project"):
+            validate_project_name("Bad Name")
+
+    def test_create_project_rejects_invalid_name(self, tmp_output_dir):
+        """create_project should raise ValueError for invalid names."""
+        with pytest.raises(ValueError, match="Invalid project name"):
+            create_project("foo bar", "python-data", "solo", tmp_output_dir)
+
+    def test_create_project_accepts_valid_name(self, tmp_output_dir):
+        """create_project should work with a valid name."""
+        project_dir = create_project(
+            "valid-name", "python-data", "solo", tmp_output_dir
+        )
+        assert project_dir.exists()
+
+
+# ---------------------------------------------------------------------------
+# Template escaping tests
+# ---------------------------------------------------------------------------
+
+
+class TestTemplateEscaping:
+    """Verify that escaped braces render as literal braces in output."""
+
+    def test_escaped_braces_become_literal(self, tmp_path):
+        """\\{\\{ should render as {{ in output."""
+        template_file = tmp_path / "test.tmpl"
+        template_file.write_text(r"Jinja: \{\{ variable \}\}")
+        context = {"variable": "value"}
+        result = render_template(template_file, context)
+        assert result == "Jinja: {{ variable }}"
+
+    def test_normal_placeholders_still_work(self, tmp_path):
+        """Regular {{key}} placeholders should still be substituted."""
+        template_file = tmp_path / "test.tmpl"
+        template_file.write_text("Name: {{project_name}}")
+        context = {"project_name": "my-app"}
+        result = render_template(template_file, context)
+        assert result == "Name: my-app"
+
+    def test_mixed_escaped_and_normal(self, tmp_path):
+        """Both escaped and normal braces should work in the same template."""
+        template_file = tmp_path / "test.tmpl"
+        template_file.write_text(
+            r"Project: {{project_name}}, Jinja: \{\{ loop.index \}\}"
+        )
+        context = {"project_name": "my-app"}
+        result = render_template(template_file, context)
+        assert result == "Project: my-app, Jinja: {{ loop.index }}"
+
+    def test_escaped_braces_not_substituted(self, tmp_path):
+        """Escaped braces should not be treated as template variables."""
+        template_file = tmp_path / "test.tmpl"
+        template_file.write_text(r"\{\{project_name\}\}")
+        context = {"project_name": "my-app"}
+        result = render_template(template_file, context)
+        assert result == "{{project_name}}"
+
+    def test_missing_template_returns_empty(self, tmp_path):
+        """Non-existent template should return empty string."""
+        result = render_template(tmp_path / "nonexistent.tmpl", {})
+        assert result == ""
+
+
+# ---------------------------------------------------------------------------
+# Windows symlink fallback tests
+# ---------------------------------------------------------------------------
+
+
+class TestWindowsSymlinkFallback:
+    """Verify that AGENTS.md falls back to copy when symlink fails."""
+
+    def test_symlink_fallback_creates_copy(self, tmp_output_dir):
+        """When os.symlink raises OSError, AGENTS.md should be a copy."""
+        with patch("pathlib.Path.symlink_to", side_effect=OSError("symlinks disabled")):
+            project_dir = create_project(
+                "test-fallback", "python-data", "solo", tmp_output_dir
+            )
+        agents_path = project_dir / "AGENTS.md"
+        assert agents_path.exists()
+        assert not agents_path.is_symlink()
+        # Content should match CLAUDE.md
+        agents_content = agents_path.read_text()
+        claude_content = (project_dir / "CLAUDE.md").read_text()
+        assert agents_content == claude_content
+
+    def test_symlink_fallback_prints_note(self, tmp_output_dir, capsys):
+        """Fallback should print an informative note."""
+        with patch("pathlib.Path.symlink_to", side_effect=OSError("symlinks disabled")):
+            create_project("test-fallback2", "python-data", "solo", tmp_output_dir)
+        captured = capsys.readouterr()
+        assert "Symlink not supported" in captured.out
+
+    def test_symlink_works_normally(self, tmp_output_dir):
+        """When symlinks are supported, AGENTS.md should be a symlink."""
+        project_dir = create_project(
+            "test-symlink", "python-data", "solo", tmp_output_dir
+        )
+        agents_path = project_dir / "AGENTS.md"
+        assert agents_path.is_symlink()
+        assert str(agents_path.readlink()) == "CLAUDE.md"
 
 
 # ---------------------------------------------------------------------------
@@ -92,6 +265,7 @@ class TestTemplatesHaveCorrectSubstitutions:
         assert "my-project" in content
         assert "python-data" in content
         assert "solo" in content
+        # No unresolved placeholders (escaped braces are fine)
         assert "{{" not in content
         assert "}}" not in content
 

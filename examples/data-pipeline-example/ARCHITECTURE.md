@@ -1,11 +1,11 @@
-# ARCHITECTURE.md — {{project_name}}
+# ARCHITECTURE.md — data-pipeline-example
 
-Created: {{date}}
-Stack: {{stack}}
+Created: 2026-03-02
+Stack: python-data
 
 ## Overview
 
-This document describes the high-level architecture of **{{project_name}}**.
+This document describes the high-level architecture of **data-pipeline-example**.
 It is the single source of truth for how the system is structured, what the
 main components are, and how data flows between them. Keep it up to date as
 the project evolves.
@@ -52,7 +52,7 @@ All significant architectural decisions should be recorded as ADRs in
 
 | Decision | ADR | Status | Date |
 |----------|-----|--------|------|
-| Initial architecture | ADR-001 | Proposed | {{date}} |
+| Initial architecture | ADR-001 | Proposed | 2026-03-02 |
 
 ## Dependencies
 

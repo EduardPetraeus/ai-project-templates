@@ -1,13 +1,13 @@
-# CONTEXT.md — {{project_name}}
+# CONTEXT.md — python-web-example
 
-Last updated: {{date}}
+Last updated: 2026-03-02
 
 ## Overview
 
-{{description}}
+Python web application (API + services)
 
-**Stack:** {{stack}}
-**Mode:** {{mode}}
+**Stack:** python-web
+**Mode:** team
 
 ## Purpose
 
@@ -17,7 +17,7 @@ start with full context and do not waste time re-discovering information.
 
 ## Current State
 
-- Project scaffolded on {{date}} using [ai-project-templates](https://github.com/EduardPetraeus/ai-project-templates)
+- Project scaffolded on 2026-03-02 using [ai-project-templates](https://github.com/EduardPetraeus/ai-project-templates)
 - Initial structure in place — governance, backlog, engineering standards configured
 - Status: **Setup phase** — infrastructure and first features to be built
 
